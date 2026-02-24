@@ -523,6 +523,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(window_widget)
         self.base_show()
         self.sat_show()
+        self.setFixedSize(1920, 1080)
 
     @QtCore.pyqtSlot()
     def start_button_clicked(self):
@@ -753,7 +754,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.queue.popleft()
             self.queue.popleft()
             self.sat_show()
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
