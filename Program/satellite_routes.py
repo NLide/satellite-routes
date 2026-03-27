@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QIntValidator
 from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtGui import QDoubleValidator
-from skyfield.api import load
+from skyfield.api import load, Loader
 from skyfield.toposlib import wgs84
 from datetime import timedelta
 from pytz import timezone
@@ -18,6 +18,22 @@ def isfloat(s):
         return True
     except ValueError:
         return False
+langList = []
+lang_all_list = ["rus", "eng"]
+for i in lang_all_list:
+    with open(f"language/{i}.txt", "r", encoding='utf-8') as file:
+        langList.append(list(map(str.strip, file.readlines())))
+with open(f"data/save.txt", "r", encoding='utf-8') as file:
+    save = list(map(str.strip, file.readlines()))
+    if len(save) != 0:
+        if save[0].isdigit() and int(save[0]) in range(100):
+            lang = int(save[0])
+            if lang > len(lang_all_list) - 1:
+                lang = 0
+        else:
+            lang = 0
+    else:
+        lang = 0
 
 class MainGraphicView(QtWidgets.QGraphicsView):
     base_coords_out_signal = QtCore.pyqtSignal(float, float)
@@ -28,7 +44,7 @@ class MainGraphicView(QtWidgets.QGraphicsView):
         self.SCALE_FACTOR = 1.25
         self.scene = QtWidgets.QGraphicsScene()
         self.img = QtWidgets.QGraphicsPixmapItem()
-        self.img.setPixmap(QtGui.QPixmap("worldmap.png"))
+        self.img.setPixmap(QtGui.QPixmap("texture/worldmap.png"))
         self.scene.addItem(self.img)
         self.setScene(self.scene)
 
@@ -50,12 +66,12 @@ class MainGraphicView(QtWidgets.QGraphicsView):
         self.start_lon = 30.31410
         self.start_lat = 59.93860
 
-        self.pic_size = 120
+        self.pic_size = 60
         self.pic_size_2 = self.pic_size // 2
         self.pic_sat = QtWidgets.QGraphicsPixmapItem()
-        self.pic_sat.setPixmap(QtGui.QPixmap('sat.png').scaled(self.pic_size, self.pic_size))
+        self.pic_sat.setPixmap(QtGui.QPixmap('texture/sat.png').scaled(self.pic_size, self.pic_size))
         self.scene.addItem(self.pic_sat)
-        self.pic_base = QtWidgets.QGraphicsPixmapItem(QtGui.QPixmap('base.png').scaled(self.pic_size, self.pic_size, ))
+        self.pic_base = QtWidgets.QGraphicsPixmapItem(QtGui.QPixmap('texture/base.png').scaled(self.pic_size, self.pic_size, ))
 
         self.color_base_list = []
         self.pic_base_list = []
@@ -202,15 +218,15 @@ class ComCenterWidget(QtWidgets.QWidget):
 
         main_layout = QtWidgets.QVBoxLayout()
         title_layout = QtWidgets.QHBoxLayout()
-        title_label = QtWidgets.QLabel("Наземный Пункт Управления:")
+        title_label = QtWidgets.QLabel(f"{langList[lang][0]}:")
         button_layout = QtWidgets.QHBoxLayout()
         self.base_box = QtWidgets.QComboBox()
-        self.base_box.addItem("НПУ")
+        self.base_box.addItem(f"{langList[lang][1]}")
         self.color_base = QtWidgets.QPushButton()
         self.color_base.setStyleSheet(f"background-color: rgb({0, 0, 0});")
-        self.add_button = QtWidgets.QPushButton("Добавить")
-        self.delete_button = QtWidgets.QPushButton("Удалить")
-        self.color_button = QtWidgets.QPushButton("Цвет")
+        self.add_button = QtWidgets.QPushButton(f"{langList[lang][2]}")
+        self.delete_button = QtWidgets.QPushButton(f"{langList[lang][3]}")
+        self.color_button = QtWidgets.QPushButton(f"{langList[lang][4]}")
         self.base_box.setEditable(True)
         self.base_box.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.NoInsert)
         self.base_box.completer().setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
@@ -288,17 +304,20 @@ class ComCenterWidget(QtWidgets.QWidget):
 class ColorWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Цвет")
+        self.setWindowTitle(f"{langList[lang][4]}")
+        main_layout = QtWidgets.QHBoxLayout()
         color_layout = QtWidgets.QVBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
         random_layout = QtWidgets.QHBoxLayout()
         red_layout = QtWidgets.QHBoxLayout()
         green_layout = QtWidgets.QHBoxLayout()
         blue_layout = QtWidgets.QHBoxLayout()
-        red_label = QtWidgets.QLabel("Красный: ")
-        green_label = QtWidgets.QLabel("Зелёный: ")
-        blue_label = QtWidgets.QLabel("Синий: ")
-        random_label = QtWidgets.QLabel("Случайно: ")
-        self.finish_button = QtWidgets.QPushButton("Изменить")
+        red_label = QtWidgets.QLabel(f"{langList[lang][5]}: ")
+        green_label = QtWidgets.QLabel(f"{langList[lang][6]}: ")
+        blue_label = QtWidgets.QLabel(f"{langList[lang][7]}: ")
+        random_label = QtWidgets.QLabel(f"{langList[lang][8]}: ")
+        self.finish_button = QtWidgets.QPushButton(f"{langList[lang][9]}")
+        self.cancel_button = QtWidgets.QPushButton(f"{langList[lang][10]}")
         self.random_check = QtWidgets.QCheckBox()
         self.random_check.setCheckState(QtCore.Qt.CheckState.Checked)
         self.red_line = QtWidgets.QLineEdit("0")
@@ -314,7 +333,9 @@ class ColorWindow(QtWidgets.QWidget):
         color_layout.addLayout(green_layout)
         color_layout.addLayout(blue_layout)
         color_layout.addLayout(random_layout)
-        color_layout.addWidget(self.finish_button)
+        color_layout.addLayout(button_layout)
+        button_layout.addWidget(self.finish_button)
+        button_layout.addWidget(self.cancel_button)
         red_layout.addWidget(red_label)
         red_layout.addWidget(self.red_line)
         green_layout.addWidget(green_label)
@@ -326,20 +347,37 @@ class ColorWindow(QtWidgets.QWidget):
 
         self.setLayout(color_layout)
 
+    def set_name(self, name):
+        self.setWindowTitle(f"{name}")
+
+
+class ColorBase(ColorWindow):
+    def __init__(self):
+        super().__init__()
+
+class ColorSat(ColorWindow):
+    def __init__(self):
+        super().__init__()
+        self.random_check.setCheckState(QtCore.Qt.CheckState.Unchecked)
+        self.setWindowTitle(f"{langList[lang][36]}")
+        self.red_line.setText("255")
+        self.green_line.setText("30")
+        self.blue_line.setText("20")
+
 class ParametersWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         main_layout = QtWidgets.QVBoxLayout()
         button_layaot = QtWidgets.QHBoxLayout()
 
-        title_label = QtWidgets.QLabel("Параметры сеанса связи")
+        title_label = QtWidgets.QLabel(f"{langList[lang][11]}")
 
         time_layout = QtWidgets.QHBoxLayout()
         self.time_line = QtWidgets.QLineEdit()
         time_line_validator = QIntValidator(0, 999)
         self.time_line.setText("7")
         self.time_line.setValidator(time_line_validator)
-        self.time_label = QtWidgets.QLabel("Дни: ")
+        self.time_label = QtWidgets.QLabel(f"{langList[lang][12]}: ")
         time_layout.addWidget(self.time_label)
         time_layout.addWidget(self.time_line)
 
@@ -350,12 +388,12 @@ class ParametersWidget(QtWidgets.QWidget):
         self.degree_line = QtWidgets.QLineEdit()
         self.degree_line.setText("30")
         self.degree_line.setValidator(degree_line_validator)
-        self.degree_label = QtWidgets.QLabel("Минимальный угол места, град: ")
+        self.degree_label = QtWidgets.QLabel(f"{langList[lang][13]}: ")
         degree_layout.addWidget(self.degree_label)
         degree_layout.addWidget(self.degree_line)
 
-        self.start_button = QtWidgets.QPushButton("Рассчитать")
-        self.clear_button = QtWidgets.QPushButton("Очистить")
+        self.start_button = QtWidgets.QPushButton(f"{langList[lang][14]}")
+        self.clear_button = QtWidgets.QPushButton(f"{langList[lang][15]}")
 
         main_layout.addWidget(title_label)
         main_layout.addLayout(time_layout)
@@ -371,12 +409,45 @@ class ListWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         main_layout = QtWidgets.QVBoxLayout()
-        title_label = QtWidgets.QLabel("Список сеансов")
+        title_label = QtWidgets.QLabel(f"{langList[lang][16]}")
         self.sessions_list = QtWidgets.QListWidget()
         main_layout.addWidget(title_label)
         main_layout.addWidget(self.sessions_list)
         self.setLayout(main_layout)
 
+class LangWidget(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        main_layout = QtWidgets.QVBoxLayout()
+        lang_layout = QtWidgets.QVBoxLayout()
+        lang_label = QtWidgets.QLabel(f"{langList[lang][37]}: ")
+        self.lang_box = QtWidgets.QComboBox()
+        lang_name_list = ["Русский", "English"]
+        self.lang_box.addItems(lang_name_list)
+        self.lang_box.setCurrentIndex(lang)
+        main_layout.addLayout(lang_layout)
+        lang_layout.addWidget(lang_label)
+        lang_layout.addWidget(self.lang_box)
+        self.setLayout(main_layout)
+
+    def change_lang(self, index):
+        global lang
+        lang = index
+        with open("data/save.txt", "w+", encoding='utf-8') as file:
+            new_save = list(map(str.strip, file.readlines()))
+            if len(new_save) == 0:
+                new_save = [str(lang)]
+            else:
+                new_save[0] = str(lang)
+            for item in new_save:
+                file.write(f"{item}\n")
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle(f"{langList[lang][38]}")
+        main_layout = QtWidgets.QVBoxLayout()
+        label = QtWidgets.QLabel(f"{langList[lang][39]}")
+        main_layout.addWidget(label)
+        dlg.setLayout(main_layout)
+        dlg.exec()
 
 class SpacecraftWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -386,11 +457,11 @@ class SpacecraftWidget(QtWidgets.QWidget):
         satellite_time_layout = QtWidgets.QFormLayout()
         latlon_layout = QtWidgets.QFormLayout()
         color_layout = QtWidgets.QFormLayout()
-
+        load = Loader('data')
         satellites_url = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle'
         self.satellites_file = load.tle_file(satellites_url)
         self.by_name = {sat.name: sat for sat in self.satellites_file}
-        with open('gp.php') as gp:
+        with open('data/gp.php') as gp:
             lines = gp.readlines()
             self.satellites = []
             for i in range(0, len(lines), 3):
@@ -402,55 +473,46 @@ class SpacecraftWidget(QtWidgets.QWidget):
         self.satellites_box.setEditable(True)
         self.satellites_box.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.NoInsert)
         self.satellites_box.completer().setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
-        self.button_update = QtWidgets.QPushButton('Обновить')
+        self.button_update = QtWidgets.QPushButton(f"{langList[lang][17]}")
 
         self.lat_label = QtWidgets.QLabel("LAT: ")
         self.lat_deg_label = QtWidgets.QLabel("          ")
         self.lon_label = QtWidgets.QLabel("LON: ")
         self.lon_deg_label = QtWidgets.QLabel("          ")
 
+        self.color_path = QtWidgets.QPushButton()
+        self.color_path.setStyleSheet(f"background-color: rgb({0, 0, 0});")
+        self.color_button = QtWidgets.QPushButton(f"{langList[lang][21]}")
         self.hour_line = QtWidgets.QLineEdit("24")
-        self.red_line = QtWidgets.QLineEdit("255")
-        self.green_line = QtWidgets.QLineEdit("30")
-        self.blue_line = QtWidgets.QLineEdit("20")
 
         self.hour_line.setMaximumWidth(50)
-        self.red_line.setMaximumWidth(50)
-        self.green_line.setMaximumWidth(50)
-        self.blue_line.setMaximumWidth(50)
         self.satellites_box.setMaximumWidth(200)
 
         self.hour_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.red_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.green_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.blue_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         validator = QIntValidator(1, 999)
-        validator_color = QIntValidator(0, 255)
         self.hour_line.setValidator(validator)
-        self.red_line.setValidator(validator_color)
-        self.green_line.setValidator(validator_color)
-        self.blue_line.setValidator(validator_color)
 
         main_layout.addLayout(satellite_time_layout)
         main_layout.addLayout(title_layout)
         title_layout.addLayout(latlon_layout, 2)
         title_layout.addLayout(color_layout, 6)
-        satellite_time_layout.addRow("Космический аппарат:", self.satellites_box)
-        satellite_time_layout.addRow("Отрисовка трассы спутника, в часах:", self.hour_line)
-        latlon_layout.addRow("Координаты:", None)
+        satellite_time_layout.addRow(f"{langList[lang][18]}:", self.satellites_box)
+        satellite_time_layout.addRow(f"{langList[lang][19]}:", self.hour_line)
+        latlon_layout.addRow(f"{langList[lang][20]}:", None)
         latlon_layout.addRow("Lat:", self.lat_label)
         latlon_layout.addRow("", self.lat_deg_label)
         latlon_layout.addRow("Lon:", self.lon_label)
         latlon_layout.addRow("", self.lon_deg_label)
-        color_layout.addRow("Цвет трассы:", None)
-        color_layout.addRow("Красный:", self.red_line)
-        color_layout.addRow("Зелёный:", self.green_line)
-        color_layout.addRow("Синий:", self.blue_line)
+        color_layout.addWidget(self.color_path)
+        color_layout.addWidget(self.color_button)
 
         main_layout.addWidget(self.button_update)
 
         self.setLayout(main_layout)
+
+    def change_color(self, r: int = 0, g: int = 0, b: int = 0):
+        self.color_path.setStyleSheet(f"background-color: rgb({r}, {g}, {b});")
 
     def show_coords(self, lat, lon):
         self.lat_label.setText(f"{lon}")
@@ -461,7 +523,7 @@ class SpacecraftWidget(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        icon = QtGui.QIcon("icon.ico")
+        icon = QtGui.QIcon("texture/icon.ico")
         self.setWindowTitle("Satellite routes")
         self.setWindowIcon(icon)
         self.satellite = None
@@ -470,46 +532,65 @@ class MainWindow(QtWidgets.QMainWindow):
         self.g_viewer = MainGraphicView()
         self.spacecraft_w = SpacecraftWidget()
         self.second = 30
+        self.timer = QtCore.QTimer(self)
+        self.timer.start(self.second * 1000)
+        self.timer.timeout.connect(self.update_coordinates)
         self.count = int(self.spacecraft_w.hour_line.text()) * 60 * 60 // self.second
         self.queue = deque(maxlen=self.count)
         self.spacecraft_w.satellites_box.currentTextChanged.connect(self.change_name)
-        self.r_sat = int(self.spacecraft_w.red_line.text())
-        self.g_sat = int(self.spacecraft_w.green_line.text())
-        self.b_sat = int(self.spacecraft_w.blue_line.text())
         self.spacecraft_w.hour_line.editingFinished.connect(self.sat_show)
-        self.spacecraft_w.red_line.editingFinished.connect(self.sat_show)
-        self.spacecraft_w.green_line.editingFinished.connect(self.sat_show)
-        self.spacecraft_w.blue_line.editingFinished.connect(self.sat_show)
-        self.color = QtGui.QColor(self.r_sat, self.g_sat, self.b_sat)
+
         self.g_viewer.base_coords_out_signal.connect(self.base_coords_handler)
         self.g_viewer.base_change_signal.connect(self.base_change_handler)
         self.com_center_w = ComCenterWidget(self.g_viewer.start_lon, self.g_viewer.start_lat)
         self.spacecraft_w = SpacecraftWidget()
         self.parameters_w = ParametersWidget()
-        self.color_w = ColorWindow()
+        self.lang_w = LangWidget()
+        self.color_w_base = ColorBase()
+        self.color_w_sat = ColorSat()
+
+        self.r_sat = int(self.color_w_sat.red_line.text())
+        self.g_sat = int(self.color_w_sat.green_line.text())
+        self.b_sat = int(self.color_w_sat.blue_line.text())
+        self.color = QtGui.QColor(self.r_sat, self.g_sat, self.b_sat)
+
         self.com_center_w.base_box.currentIndexChanged.connect(self.change_base)
         self.com_center_w.add_button.clicked.connect(self.add_button_clicked)
         self.com_center_w.delete_button.clicked.connect(self.delete_button_clicked)
         self.com_center_w.color_button.clicked.connect(self.show_color_w)
         self.spacecraft_w.satellites_box.textActivated.connect(self.sat_show)
         self.spacecraft_w.button_update.clicked.connect(self.sat_show)
+        self.spacecraft_w.color_button.clicked.connect(self.show_color_sat)
         self.parameters_w.start_button.clicked.connect(self.start_button_clicked)
         self.parameters_w.clear_button.clicked.connect(self.clear_button_clicked)
         self.com_center_w.lat_line.editingFinished.connect(self.base_show)
         self.com_center_w.lon_line.editingFinished.connect(self.base_show)
-        self.color_w.finish_button.clicked.connect(self.color_change)
+        self.color_w_base.finish_button.clicked.connect(self.color_change_base)
+        self.color_w_base.cancel_button.clicked.connect(self.color_cancel_base)
+        self.color_w_sat.finish_button.clicked.connect(self.color_change_sat)
+        self.color_w_sat.cancel_button.clicked.connect(self.color_cancel_sat)
+        self.lang_w.lang_box.textActivated.connect(self.change_lang)
         self.list_w = ListWidget()
+
+        self.botton_theme = QtWidgets.QPushButton(f"{langList[lang][40]}")
+        self.botton_theme.clicked.connect(self.toggle_theme)
 
         window_widget = QtWidgets.QWidget()
         main_layout = QtWidgets.QHBoxLayout()
         list_layout = QtWidgets.QVBoxLayout()
         big_layout = QtWidgets.QVBoxLayout()
         info_layout = QtWidgets.QHBoxLayout()
+        lang_param_layout = QtWidgets.QVBoxLayout()
         mgv_layout = QtWidgets.QHBoxLayout()
 
-        info_layout.addWidget(self.com_center_w, 1)
-        info_layout.addWidget(self.spacecraft_w, 1)
-        info_layout.addWidget(self.parameters_w, 1)
+        lang_param_layout.addWidget(self.lang_w)
+        lang_param_layout.addWidget(self.botton_theme)
+        lang_param_layout.addWidget(self.parameters_w)
+
+        info_layout.addWidget(self.com_center_w, 2)
+        info_layout.addWidget(self.spacecraft_w, 2)
+        info_layout.addLayout(lang_param_layout, 1)
+
         mgv_layout.addWidget(self.g_viewer)
         big_layout.addLayout(mgv_layout)
         big_layout.addLayout(info_layout)
@@ -519,11 +600,11 @@ class MainWindow(QtWidgets.QMainWindow):
         main_layout.addLayout(list_layout, 1)
         window_widget.setLayout(main_layout)
 
-        self.color_change()
+        self.color_change_base()
         self.setCentralWidget(window_widget)
         self.base_show()
+        self.spacecraft_w.change_color(self.r_sat, self.g_sat, self.b_sat)
         self.sat_show()
-        self.setFixedSize(1920, 1080)
 
     @QtCore.pyqtSlot()
     def start_button_clicked(self):
@@ -531,18 +612,18 @@ class MainWindow(QtWidgets.QMainWindow):
         peak_t = None
         start_t_str = None
         if len(self.g_viewer.pic_base_list) == 0:
-            error.append("Нет спутника")
+            error.append(f"{langList[lang][22]}")
         for i in range(len(self.com_center_w.base_list)):
             if not isfloat(self.com_center_w.base_list[i][0]):
-                error.append("Широта наземного пункта связи")
+                error.append(f"{langList[lang][23]}")
             if not isfloat(self.com_center_w.base_list[i][1]):
-                error.append("Долгота наземного пункта связи")
+                error.append(f"{langList[lang][24]}")
             if not self.parameters_w.time_line.text().isnumeric():
-                error.append("Дни сеанса связи")
+                error.append(f"{langList[lang][25]}")
             if not isfloat(self.parameters_w.degree_line.text()):
-                error.append("Минимальный угол")
+                error.append(f"{langList[lang][26]}")
             elif float(self.parameters_w.degree_line.text()) > 90:
-                error.append("Минимальный угол")
+                error.append(f"{langList[lang][26]}")
             if len(error) == 0:
                 td = int(self.parameters_w.time_line.text())
                 degrees = float(self.parameters_w.degree_line.text())
@@ -565,23 +646,23 @@ class MainWindow(QtWidgets.QMainWindow):
                         finish_t_str = finish_t.strftime('%H:%M:%S')
                         alt, az, dist = top.altaz()
                         dif_t_str = (finish_t - start_t)
-                        text = (f'НПУ: {self.com_center_w.base_box.itemText(i)}\n'
-                                f'\tВремя (UTC+3): {peak_t}\n'
-                                f'\tАзимут:\t{az}\n'
-                                f'\tМаксимальный угол места:\t{alt}\n'                           
-                                f'\tНачало:\t{start_t_str}\n'
-                                f'\tКонец:\t{finish_t_str}\n'
-                                f'\tДлительность:\t{dif_t_str}')
+                        text = (f'f"{langList[lang][1]}": {self.com_center_w.base_box.itemText(i)}\n'
+                                f'\t{langList[lang][27]} (UTC+3): {peak_t}\n'
+                                f'\t{langList[lang][28]}:\t{az}\n'
+                                f'\t{langList[lang][29]}:\t{alt}\n'                           
+                                f'\t{langList[lang][30]}:\t{start_t_str}\n'
+                                f'\t{langList[lang][31]}:\t{finish_t_str}\n'
+                                f'\t{langList[lang][32]}:\t{dif_t_str}')
                         self.list_w.sessions_list.addItem(text)
                         no_events = False
                 if no_events:
-                    self.list_w.sessions_list.addItem("Не найдено сеансов связи")
+                    self.list_w.sessions_list.addItem(f"{langList[lang][33]} {self.com_center_w.base_box.itemText(i)}")
 
         if len(error) > 0:
             dlg = QtWidgets.QDialog(self)
-            dlg.setWindowTitle("Ошибка")
+            dlg.setWindowTitle(f"{langList[lang][34]}")
             main_layout = QtWidgets.QVBoxLayout()
-            label = QtWidgets.QLabel("Ошибки:")
+            label = QtWidgets.QLabel(f"{langList[lang][35]}:")
             main_layout.addWidget(label)
             for i in range(len(error)):
                 label_error = QtWidgets.QLabel(f"{error[i]}")
@@ -589,10 +670,13 @@ class MainWindow(QtWidgets.QMainWindow):
             dlg.setLayout(main_layout)
             dlg.exec()
 
+    def change_lang(self):
+        self.lang_w.change_lang(self.lang_w.lang_box.currentIndex())
+
     def add_button_clicked(self):
         if self.com_center_w.base_box.findText(self.com_center_w.base_box.currentText()) == -1:
             self.g_viewer.add_base(randint(0, 255), randint(0, 255), randint(0, 255))
-            self.color_change()
+            self.color_change_base()
             self.com_center_w.base_box.addItem(self.com_center_w.base_box.currentText())
             self.com_center_w.base_list.append([self.g_viewer.start_lat, self.g_viewer.start_lon])
             self.com_center_w.change_index(self.g_viewer.index)
@@ -630,22 +714,33 @@ class MainWindow(QtWidgets.QMainWindow):
             lon = self.com_center_w.base_list[self.g_viewer.index][1]
             pix_lat, pix_lon = self.g_viewer.geo_to_pix(lat, lon)
             self.g_viewer.move_base_to(pix_lat, pix_lon)
-            self.change_rgb_base()
+        self.change_rgb_base()
         self.com_center_w.show_coords(lat, lon)
 
     def show_color_w(self):
-        self.color_w.show()
+        self.change_rgb_base()
+        self.color_w_base.set_name(self.com_center_w.base_box.currentText())
+        self.color_w_base.show()
 
-    def color_change(self):
-        if self.color_w.random_check.checkState() == QtCore.Qt.CheckState.Checked:
+    def show_color_sat(self):
+        self.color_w_sat.show()
+
+    def color_change_base(self):
+        if self.color_w_base.random_check.checkState() == QtCore.Qt.CheckState.Checked:
             r = randint(0, 255)
             g = randint(0, 255)
             b = randint(0, 255)
         else:
-            r = int(self.color_w.red_line.text())
-            g = int(self.color_w.green_line.text())
-            b = int(self.color_w.blue_line.text())
+            r = int(self.color_w_base.red_line.text())
+            g = int(self.color_w_base.green_line.text())
+            b = int(self.color_w_base.blue_line.text())
         self.g_viewer.change_color(r, g, b)
+        self.change_rgb_base()
+
+    def color_cancel_sat(self):
+        self.change_rgb_sat()
+
+    def color_cancel_base(self):
         self.change_rgb_base()
 
     def clear_button_clicked(self):
@@ -659,11 +754,29 @@ class MainWindow(QtWidgets.QMainWindow):
         r, g, b, a = self.g_viewer.color_base_list[self.g_viewer.index].color().getRgb()
         return r, g, b
 
+    def color_change_sat(self):
+        if self.color_w_sat.random_check.checkState() == QtCore.Qt.CheckState.Checked:
+            self.r_sat = randint(0, 255)
+            self.g_sat = randint(0, 255)
+            self.b_sat = randint(0, 255)
+        else:
+            self.r_sat = int(self.color_w_sat.red_line.text())
+            self.g_sat = int(self.color_w_sat.green_line.text())
+            self.b_sat = int(self.color_w_sat.blue_line.text())
+        self.spacecraft_w.change_color(self.r_sat ,self.g_sat, self.b_sat)
+        self.change_rgb_sat()
+        self.sat_show()
+
+    def change_rgb_sat(self):
+        self.color_w_sat.red_line.setText(str(self.r_sat))
+        self.color_w_sat.green_line.setText(str(self.g_sat))
+        self.color_w_sat.blue_line.setText(str(self.b_sat))
+
     def change_rgb_base(self):
         r, g, b = self.get_rgb_base()
-        self.color_w.red_line.setText(f"{r}")
-        self.color_w.green_line.setText(f"{g}")
-        self.color_w.blue_line.setText(f"{b}")
+        self.color_w_base.red_line.setText(f"{r}")
+        self.color_w_base.green_line.setText(f"{g}")
+        self.color_w_base.blue_line.setText(f"{b}")
         self.com_center_w.change_color(r, g, b)
 
     def base_change_handler(self, index: int):
@@ -697,9 +810,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.g_viewer.clear_lines()
         self.count = int(self.spacecraft_w.hour_line.text()) * 60 * 60 // self.second
         self.queue = deque(maxlen=self.count)
-        self.r_sat = int(self.spacecraft_w.red_line.text())
-        self.g_sat = int(self.spacecraft_w.green_line.text())
-        self.b_sat = int(self.spacecraft_w.blue_line.text())
+        self.r_sat = int(self.color_w_sat.red_line.text())
+        self.g_sat = int(self.color_w_sat.green_line.text())
+        self.b_sat = int(self.color_w_sat.blue_line.text())
         self.color = QtGui.QColor(self.r_sat, self.g_sat, self.b_sat)
         satellite_name = self.spacecraft_w.satellites_box.currentText()
         queue = self.get_satellite_path_coordinates(satellite_name).copy()
@@ -754,8 +867,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.queue.popleft()
             self.queue.popleft()
             self.sat_show()
+
+    def toggle_theme(self):
+        current_scheme = app.styleHints().colorScheme()
+        if current_scheme == Qt.ColorScheme.Dark:
+            new_scheme = Qt.ColorScheme.Light
+        else:
+            new_scheme = Qt.ColorScheme.Dark
+        app.styleHints().setColorScheme(new_scheme)
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.showMaximized()
     app.exec()
+# auto-py-to-exe

@@ -1,0 +1,41 @@
+Ground control center
+GCC
+Add
+Delete
+Color
+Red
+Green
+Blue
+Random
+Edit
+Cancel
+Communication session parameters
+Days
+Minimum elevation angle, degrees
+Calculate
+Clear
+Session list
+Refresh
+Spacecraft
+Satellite path display, in hours
+Coordinates
+Path color
+No satellite
+GCC latitude
+GCC longitude
+Communication session days
+Minimum angle
+Time
+Azimuth
+Maximum elevation angle
+Start
+End
+Duration
+No communication sessions found for
+Error
+Errors
+Path
+Language
+Relaunch
+Language changes will take effect after relaunch
+Change theme
