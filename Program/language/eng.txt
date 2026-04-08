@@ -38,4 +38,9 @@ Path
 Language
 Relaunch
 Language changes will take effect after relaunch
-Change theme
+Theme
+Settings
+Update TLE
+Dark
+Light
+Download
